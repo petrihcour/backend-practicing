@@ -7,8 +7,13 @@ const sayHello = (req, res, next) => {
 }
 
 app.use(morgan("dev"));
-app.use(sayHello);
 
+//i can write it like this also
+// app.get("/hello", (req, res, next) => {
+//     res.send("Hellooooo!")
+// });
+
+app.get("/hello", sayHello);
 
 
 module.exports = app; // export the express function so it can be used in the server.js file 
