@@ -30,5 +30,18 @@ app.get("/say/:greeting", (req, res, next) => {
     res.send(content);
 });
 
+// error handling for route that doesn't exist
+
+app.use((req, res, next) => {
+    res.send(`The route ${req.path} does not exist!`)
+})
+
+// error handling for when there's problem with app itself or i trigger with next funciton in previous middleware function
+
+app.use((err, req, res, next) => {
+    console.error(err);
+    res.send(err);
+})
+
 
 module.exports = app; // export the express function so it can be used in the server.js file 
