@@ -30,6 +30,15 @@ app.get("/say/:greeting", (req, res, next) => {
     res.send(content);
 });
 
+app.get("/states/:abbreviation", (req, res, next) => {
+    const abbreviation = req.params.abbreviation;
+    if (abbreviation.length !== 2) {
+        next("State abbreviation is invalid.");
+    } else {
+        res.send(`${abbreviation} is a nice state. I'd like to visit.`)
+    }
+})
+
 // error handling for route that doesn't exist
 
 app.use((req, res, next) => {
