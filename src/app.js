@@ -41,12 +41,12 @@ app.get("/states/:abbreviation", (req, res, next) => {
     }
 })
 
-app.get("/travel:abbreviation", (req, res, next) => {
+app.get("/travel/:abbreviation", (req, res, next) => {
     const abbreviation = req.params.abbreviation;
     if (abbreviation.length !== 2) {
         next("State abbreviation is invalid");
     } else {
-        res.send(`Enjoy your trip to ${abbreviation}`)
+        res.send(`Enjoy your trip to ${abbreviation}!`)
     }
 })
 
