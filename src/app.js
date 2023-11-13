@@ -30,6 +30,8 @@ app.get("/say/:greeting", (req, res, next) => {
     res.send(content);
 });
 
+// error handling
+
 app.get("/states/:abbreviation", (req, res, next) => {
     const abbreviation = req.params.abbreviation;
     if (abbreviation.length !== 2) {
@@ -39,13 +41,22 @@ app.get("/states/:abbreviation", (req, res, next) => {
     }
 })
 
+app.get("/travel:abbreviation", (req, res, next) => {
+    const abbreviation = req.params.abbreviation;
+    if (abbreviation.length !== 2) {
+        next("State abbreviation is invalid");
+    } else {
+        res.send(`Enjoy your trip to ${abbreviation}`)
+    }
+})
+
 // error handling for route that doesn't exist
 
 app.use((req, res, next) => {
     res.send(`The route ${req.path} does not exist!`)
 })
 
-// error handling for when there's problem with app itself or i trigger with next funciton in previous middleware function
+// error handling for when there's problem with app itself or i trigger with next function in previous middleware function
 
 app.use((err, req, res, next) => {
     console.error(err);
