@@ -3,6 +3,18 @@ const morgan = require("morgan");
 const app = express(); // the express package exports an Express function that i will assign to a new variable. i get a new express application and assign it to a VARIABLE
 app.use(morgan("dev"));
 
+// router-level middleware
+const checkForAbbreviation = (req, res, next) => {
+    const abbreviation = req.params.abbreviation;
+    if (abbreviation.length !== 2) {
+        next(`State abbreviation is invalid.`)
+    } else {
+        next();
+    }
+}
+
+// req for hello path
+
 app.get("/hello", (req, res) => {
     console.log(req.query);
     const name = req.query.name;
@@ -30,25 +42,25 @@ app.get("/say/:greeting", (req, res, next) => {
     res.send(content);
 });
 
-// error handling
+// error handling and implementing / calling on router level middleware function checkForAbbreviation
 
-app.get("/states/:abbreviation", (req, res, next) => {
-    const abbreviation = req.params.abbreviation;
-    if (abbreviation.length !== 2) {
-        next("State abbreviation is invalid.");
-    } else {
-        res.send(`${abbreviation} is a nice state. I'd like to visit.`)
+app.get(
+    "/states/:abbreviation",
+    checkForAbbreviation,
+    (req, res, next) => {
+        res.send(`${req.params.abbreviation} is a nice state that I'd like to visit.`);
     }
-})
+)
 
-app.get("/travel/:abbreviation", (req, res, next) => {
-    const abbreviation = req.params.abbreviation;
-    if (abbreviation.length !== 2) {
-        next("State abbreviation is invalid");
-    } else {
-        res.send(`Enjoy your trip to ${abbreviation}!`)
+app.get(
+    "/travel/:abbreviation",
+    checkForAbbreviation,
+    (req, res, next) => {
+        res.send(`Enjoy your trip to ${req.params.abbreviation}!`);
     }
-})
+)
+
+
 
 // error handling for route that doesn't exist
 
