@@ -1,79 +1,77 @@
-const express = require("express"); // requiring the express package and assigning it to a variable
-const morgan = require("morgan");
-const app = express(); // the express package exports an Express function that i will assign to a new variable. i get a new express application and assign it to a VARIABLE
-app.use(morgan("dev"));
+const express = require("express");
+const app = express();
+const pastes = require("./data/pastes-data");
 
-// router-level middleware
-const checkForAbbreviation = (req, res, next) => {
-    const abbreviation = req.params.abbreviation;
-    if (abbreviation.length !== 2) {
-        next(`State abbreviation is invalid.`)
-    } else {
-        next();
-    }
+// use app.use express.json to parse json data and add a body property to the request (req.body)
+app.use(express.json());
+
+app.get("/pastes", (req, res) => {
+  res.json({ data: pastes });
+});
+
+// New middleware function to validate request body for post request
+
+function bodyHasTextProperty(req, res, next) {
+  const { data: { text } = {} } = req.body;
+  if (text) {
+    return next(); // call next without an error message if the result exists
+  }
+  next({
+    status: 400,
+    message: "A 'text' property is required.",
+  });
 }
 
-// req for hello path
+// POST request to /pastes
 
-app.get("/hello", (req, res) => {
-    console.log(req.query);
-    const name = req.query.name;
-    const content = name ? `Hello, ${name}!` : "Hello!";
-    res.send(content);
+let lastPasteId = pastes.reduce((maxId, paste) => Math.max(maxId, paste.id), 0);
+
+app.post("/pastes", bodyHasTextProperty, (req, res, next) => {
+  const { data: { user_id, name, syntax, expiration, exposure, text } = {} } =
+    req.body;
+  const newPaste = {
+    id: ++lastPasteId,
+    user_id,
+    name,
+    syntax,
+    expiration,
+    exposure,
+    text,
+  };
+  pastes.push(newPaste);
+  res.status(201).json({ data: newPaste });
 });
 
-app.get("/songs", (req, res) => {
-    const title = req.query.title;
-    res.send(title);
-})
+// TODO: Follow instructions in the checkpoint to implement ths API.
 
-// Route parameters
+function validatePasteId(req, res, next) {
+  const { pasteId } = req.params;
+  const foundPaste = pastes.find((paste) => Number(pasteId) === paste.id);
+  if (foundPaste) {
+    req.foundPaste = foundPaste;
+    next();
+  } else {
+    next({
+      status: 404,
+      message: `Paste id not found: ${pasteId}`,
+    });
+  }
+}
 
-// You want this one to go before /say/:greeting because the routes could be confused for one another. if we request /say/goodbye first, since Express looks at each piece of middleware in order, it will request /say/goodbye first, thus displaying "Sorry to see you go!"" on the screen if  /say/goodbye is the path
-app.get("/say/goodbye", (req, res) => {
-    res.send("Sorry to see you go!")
-})
-
-
-app.get("/say/:greeting", (req, res, next) => {
-    const greeting = req.params.greeting;
-    const name = req.query.name;
-    const content = greeting && name ? `${greeting}, ${name}!` : `${greeting}!`;
-    res.send(content);
+app.use("/pastes/:pasteId", validatePasteId, (req, res, next) => {
+  res.json({ data: req.foundPaste });
 });
 
-// error handling and implementing / calling on router level middleware function checkForAbbreviation
+// Not found handler
+app.use((request, response, next) => {
+  next(`Not found: ${request.originalUrl}`);
+});
 
-app.get(
-    "/states/:abbreviation",
-    checkForAbbreviation,
-    (req, res, next) => {
-        res.send(`${req.params.abbreviation} is a nice state that I'd like to visit.`);
-    }
-)
+// Error handler
+app.use((error, req, res, next) => {
+  console.error(error);
+  const { status = 500, message = "Something went wrong!" } = error;
+  res.status(status).json({ error: message });
+});
 
-app.get(
-    "/travel/:abbreviation",
-    checkForAbbreviation,
-    (req, res, next) => {
-        res.send(`Enjoy your trip to ${req.params.abbreviation}!`);
-    }
-)
-
-
-
-// error handling for route that doesn't exist
-
-app.use((req, res, next) => {
-    res.send(`The route ${req.path} does not exist!`)
-})
-
-// error handling for when there's problem with app itself or i trigger with next function in previous middleware function
-
-app.use((err, req, res, next) => {
-    console.error(err);
-    res.send(err);
-})
-
-
-module.exports = app; // export the express function so it can be used in the server.js file 
+module.exports = app;
